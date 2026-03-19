@@ -688,86 +688,79 @@ const App: React.FC = () => {
   const prevAreasRef = React.useRef<string[]>([]);
 
   React.useEffect(() => {
-    const areas = getActiveAreaIds(vesselPosition);
-    const prev = prevAreasRef.current;
+  const areas = getActiveAreaIds(vesselPosition);
+  const prev = prevAreasRef.current;
 
-    const entered = areas.filter((a) => !prev.includes(a));
-    const exited = prev.filter((a) => !areas.includes(a));
+  const entered = areas.filter((a) => !prev.includes(a));
+  const exited = prev.filter((a) => !areas.includes(a));
 
-    if (entered.length) {
-      console.log('🟢 ENTERED:', entered);
-    }
+  if (entered.length) {
+    console.log('🟢 ENTERED:', entered);
+  }
 
-    if (exited.length) {
-      console.log('🔴 EXITED:', exited);
-    }
+  if (exited.length) {
+    console.log('🔴 EXITED:', exited);
+  }
 
-    const now = new Date();
-    const zoneEvents: ZoneActivityEvent[] = [
-      ...entered.map((areaId) => ({
-        id: `${areaId}-ENTRY-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
-        areaId,
-        eventType: 'ENTRY' as const,
-        timestampUtc: now.toISOString(),
-        lat: vesselPosition.lat,
-        lng: vesselPosition.lng,
-      })),
-      ...exited.map((areaId) => ({
-        id: `${areaId}-EXIT-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
-        areaId,
-        eventType: 'EXIT' as const,
-        timestampUtc: now.toISOString(),
-        lat: vesselPosition.lat,
-        lng: vesselPosition.lng,
-      })),
-    ];
+  const now = new Date();
+  const zoneEvents: AppZoneActivityEvent[] = [
+    ...entered.map((areaId) => ({
+      id: `${areaId}-ENTRY-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      areaId,
+      eventType: 'ENTRY' as const,
+      timestampUtc: now.toISOString(),
+      lat: vesselPosition.lat,
+      lng: vesselPosition.lng,
+    })),
+    ...exited.map((areaId) => ({
+      id: `${areaId}-EXIT-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      areaId,
+      eventType: 'EXIT' as const,
+      timestampUtc: now.toISOString(),
+      lat: vesselPosition.lat,
+      lng: vesselPosition.lng,
+    })),
+  ];
 
-    if (zoneEvents.length > 0) {
-      console.log('🧭 APP ZONE ACTIVITY EVENTS:', zoneEvents);
-      setZoneActivityLog((prevLog) => [...zoneEvents, ...prevLog].slice(0, 500));
-    }
+  if (zoneEvents.length > 0) {
+    console.log('🧭 APP ZONE ACTIVITY EVENTS:', zoneEvents);
+    setZoneActivityLog((prevLog) => [...zoneEvents, ...prevLog].slice(0, 500));
+  }
 
-    console.log('📍 VESSEL POSITION:', vesselPosition, '| DETECTED AREAS:', areas);
+  console.log('📍 VESSEL POSITION:', vesselPosition, '| DETECTED AREAS:', areas);
 
-    prevAreasRef.current = areas;
+  prevAreasRef.current = areas;
 
-    const mapToRulesetZones = (geoAreas: string[]): string[] => {
-      const rulesetZones = new Set<string>();
+  const mapToRulesetZones = (geoAreas: string[]): string[] => {
+    const rulesetZones = new Set<string>();
 
-      for (const area of geoAreas) {
-        if (area.includes('SVALBARD') || area.includes('LONGYEARBYEN')) {
-          rulesetZones.add('SVALBARD');
-        } else if (area.includes('TERRITORIAL') || area.includes('PORT')) {
-          rulesetZones.add('PORT');
-        } else if (area.includes('EXPEDITION') || area.includes('IAATO')) {
-          rulesetZones.add('EXPEDITION');
-        }
-
-        if (area.includes('NORWAY_12NM') || area.includes('NORWAY_EEZ')) {
-          rulesetZones.add('COASTAL');
-        }
-
-        if (area.includes('IMO_N60') || area.includes('POLAR')) {
-          rulesetZones.add('HIGH SEAS');
-        }
+    for (const area of geoAreas) {
+      if (area.includes('SVALBARD') || area.includes('LONGYEARBYEN')) {
+        rulesetZones.add('SVALBARD');
+      } else if (area.includes('TERRITORIAL') || area.includes('PORT')) {
+        rulesetZones.add('PORT');
+      } else if (area.includes('EXPEDITION') || area.includes('IAATO')) {
+        rulesetZones.add('EXPEDITION');
       }
 
-      if (rulesetZones.size === 0) {
+      if (area.includes('NORWAY_12NM') || area.includes('NORWAY_EEZ')) {
+        rulesetZones.add('COASTAL');
+      }
+
+      if (area.includes('IMO_N60') || area.includes('POLAR')) {
         rulesetZones.add('HIGH SEAS');
       }
-
-      return Array.from(rulesetZones);
-    };
-
-    setActiveZones(mapToRulesetZones(areas.length > 0 ? areas : ['OPEN_OCEAN']));
-  }, [vesselPosition]);
-
-  React.useEffect(() => {
-    if (zoneActivityLog.length > 0) {
-      console.log('🧭 Latest app zone activity event:', zoneActivityLog[0]);
-      console.log('🧭 Full app zone activity log:', zoneActivityLog);
     }
-  }, [zoneActivityLog]);
+
+    if (rulesetZones.size === 0) {
+      rulesetZones.add('HIGH SEAS');
+    }
+
+    return Array.from(rulesetZones);
+  };
+
+  setActiveZones(mapToRulesetZones(areas.length > 0 ? areas : ['OPEN_OCEAN']));
+}, [vesselPosition]);
 
   const detectedAreas = getActiveAreaIds(vesselPosition);
 
