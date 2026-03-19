@@ -373,6 +373,16 @@ interface MapCanvasProps {
     coordinates: [number, number][];
     status: string;
   }>;
+
+appZoneActivityLog?: {
+  id: string;
+  areaId: string;
+  eventType: 'ENTRY' | 'EXIT';
+  timestampUtc: string;
+  lat: number;
+  lng: number;
+}[];
+
   aisEnabled?: boolean;
 }
 
@@ -406,10 +416,13 @@ export function MapCanvas({
   onMapClick,
   drawingPoints = [],
   customZones = [],
+  appZoneActivityLog = [],
   aisEnabled = true,
 }: MapCanvasProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
+
+  const zoneActivityLayerRef = useRef<L.LayerGroup | null>(null);
 
   const greenlandProtectedGeoJsonRef = useRef<any>(null);
   const greenlandProtectedLayerRef = useRef<L.LayerGroup | null>(null);
@@ -546,6 +559,34 @@ export function MapCanvas({
 
     loadProtectedAreas();
   }, []);
+
+  useEffect(() => {
+  if (!leafletMapRef.current || !zoneActivityLayerRef.current) return;
+
+  const layer = zoneActivityLayerRef.current;
+  layer.clearLayers();
+
+  appZoneActivityLog.forEach((entry) => {
+    const color = entry.eventType === 'ENTRY' ? '#00ff88' : '#ff4444';
+
+    const marker = L.circleMarker([entry.lat, entry.lng], {
+      radius: 6,
+      color,
+      weight: 2,
+      fillOpacity: 0.8,
+    });
+
+    marker.bindPopup(`
+      <b>${entry.eventType}</b><br/>
+      ${entry.areaId}<br/>
+      ${entry.timestampUtc}<br/>
+      Lat: ${entry.lat.toFixed(4)}<br/>
+      Lng: ${entry.lng.toFixed(4)}
+    `);
+
+    marker.addTo(layer);
+  });
+}, [appZoneActivityLog]);
 
   useEffect(() => {
     const fetchGreenlandProtectedGeoJson = async () => {
@@ -723,6 +764,8 @@ const polygon = L.polygon(zone.coordinates, {
           maxBounds: undefined,
           worldCopyJump: true,
         });
+
+        zoneActivityLayerRef.current = L.layerGroup().addTo(map);
 
         leafletMapRef.current = map;
         setCurrentZoom(10);

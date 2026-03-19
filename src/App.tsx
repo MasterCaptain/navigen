@@ -101,6 +101,10 @@ const App: React.FC = () => {
   const [protectedAreas, setProtectedAreas] = React.useState<CrossingArea[]>([]);
   const [zoneActivityLog, setZoneActivityLog] = React.useState<ZoneActivityEvent[]>([]);
 
+  const clearZoneLog = () => {
+  setZoneActivityLog([]);
+};
+
   const [arcticPolarVisible, setArcticPolarVisible] = React.useState(true);
   const [antarcticPolarVisible, setAntarcticPolarVisible] = React.useState(true);
   const [openSeaMapLayer, setOpenSeaMapLayer] = React.useState(true);
@@ -941,6 +945,24 @@ const App: React.FC = () => {
         </div>
       )}
 
+      <button
+  onClick={clearZoneLog}
+  style={{
+    position: 'absolute',
+    bottom: 90,
+    right: 24,
+    zIndex: 9999,
+    background: '#1e293b',
+    color: '#fff',
+    border: '1px solid #475569',
+    borderRadius: 8,
+    padding: '8px 12px',
+    cursor: 'pointer',
+  }}
+>
+  Clear points
+</button>
+
       <MapCanvas
         zone={activeZones.join(' + ')}
         arcticPolarVisible={arcticPolarVisible}
@@ -972,6 +994,7 @@ const App: React.FC = () => {
         customZones={customZones}
         aisEnabled={aisEnabled}
         zoneCrossingPoints={zoneCrossingPoints}
+        appZoneActivityLog={zoneActivityLog}
       />
 
       {rule && (
