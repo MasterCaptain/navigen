@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🗺️ NAVIGEN - Upload Protected Areas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1e293b;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .content {
+      padding: 40px;
+    }
+    
+    .step {
+      background: #334155;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-left: 4px solid #06b6d4;
+    }
+    
+    .step h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #06b6d4;
+    }
+    
+    .step p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+    }
+    
+    .btn {
+      display: inline-block;
+      background: #06b6d4;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    
+    .btn:hover {
+      background: #0891b2;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+    }
+    
+    .btn:disabled {
+      background: #475569;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    #log {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 16px;
+      border: 1px solid #334155;
+    }
+    
+    .log-line {
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .log-success {
+      color: #10b981;
+    }
+    
+    .log-error {
+      color: #ef4444;
+    }
+    
+    .log-info {
+      color: #06b6d4;
+    }
+    
+    .log-warning {
+      color: #f59e0b;
+    }
+    
+    .progress {
+      background: #0f172a;
+      border-radius: 8px;
+      height: 40px;
+      overflow: hidden;
+      margin-top: 16px;
+      border: 1px solid #334155;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .summary {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      border: 2px solid #10b981;
+      display: none;
+    }
+    
+    .summary.show {
+      display: block;
+    }
+    
+    .summary h3 {
+      color: #10b981;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    .summary-item {
+      background: #1e293b;
+      padding: 12px;
+      border-radius: 6px;
+    }
+    
+    .summary-label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    
+    .summary-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #06b6d4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🗺️ NAVIGEN Protected Areas Upload</h1>
+      <p>Laster opp Svalbard verneområder fra Supabase Storage til database</p>
+    </div>
+    
+    <div class="content">
+      <div class="step">
+        <h2>📋 Informasjon</h2>
+        <p><strong>Bucket:</strong> geojson-data</p>
+        <p><strong>Fil:</strong> svalbard_protected_areas.geojson</p>
+        <p><strong>Tabell:</strong> protected_areas</p>
+      </div>
+      
+      <div class="step">
+        <h2>🚀 Klar til å laste opp?</h2>
+        <p>Dette vil hente GeoJSON-filen fra Supabase Storage og laste alle verneområder inn i databasen.</p>
+        <button id="uploadBtn" class="btn" onclick="startUpload()">Start Upload</button>
+      </div>
+      
+      <div id="progressContainer" style="display: none;">
+        <div class="progress">
+          <div id="progressBar" class="progress-bar" style="width: 0%;">0%</div>
+        </div>
+      </div>
+      
+      <div id="logContainer" style="display: none;">
+        <div id="log"></div>
+      </div>
+      
+      <div id="summary" class="summary">
+        <h3>✅ Upload Fullført!</h3>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">Vellykkede</div>
+            <div class="summary-value" id="successCount">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Feilet</div>
+            <div class="summary-value" id="errorCount" style="color: #ef4444;">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+
+    const SUPABASE_URL = 'https://fcwzmwoahottepzhmynz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3ptd29haG90dGVwemhteW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYyNzg4MTEsImV4cCI6MjA1MTg1NDgxMX0.5GQfxlANUyJ1X3eSLEIFJ7g_PHKsRlkm_rQiPQjV_bI';
+    
+    const BUCKET_NAME = 'geojson-data';
+    const FILE_NAME = 'svalbard_protected_areas.geojson';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const AREA_TYPE_MAP = {
+      'nasjonalpark': 'national_park',
+      'naturreservat': 'nature_reserve',
+      'fuglereservat': 'bird_reserve',
+      'geotopVernområde': 'geotope',
+      'plantevernområde': 'plant_protection',
+      'marintVerneområde': 'marine_protected',
+      'naturreservatJanMayen': 'nature_reserve',
+      'nasjonalparkSvalbard': 'national_park',
+    };
+    
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const logContainer = document.getElementById('logContainer');
+      logContainer.style.display = 'block';
+      
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.textContent = message;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100);
+      const progressBar = document.getElementById('progressBar');
+      const progressContainer = document.getElementById('progressContainer');
+      
+      progressContainer.style.display = 'block';
+      progressBar.style.width = percent + '%';
+      progressBar.textContent = percent + '%';
+    }
+    
+    function mapAreaType(verneformAggregert) {
+      return AREA_TYPE_MAP[verneformAggregert] || 'other';
+    }
+    
+    function generateAreaId(navn) {
+      return `PROTECTED_${navn
+        .toUpperCase()
+        .replace(/[ÆØÅÄÖ]/g, (c) => ({ 'Æ': 'AE', 'Ø': 'O', 'Å': 'AA', 'Ä': 'A', 'Ö': 'O' }[c]))
+        .replace(/[^A-Z0-9]/g, '_')
+        .replace(/_+/g, '_')}`;
+    }
+    
+    function transformFeature(feature) {
+      const props = feature.properties;
+      
+      return {
+        area_id: generateAreaId(props.navn),
+        name: props.navn,
+        name_en: props.offisieltNavn || props.navn,
+        area_type: mapAreaType(props.verneformAggregert),
+        region: props.kommune === '2211' ? 'JAN_MAYEN' : 'SVALBARD',
+        description: `${props.offisieltNavn || props.navn}. IUCN: ${props.iucn || 'N/A'}`,
+        regulations: {
+          entry_prohibited: false,
+          wildlife_distance: 300,
+          landing_permit: props.verneformAggregert === 'naturreservat',
+          speed_limit_knots: null,
+          no_drone_zone: true,
+          iucn_category: props.iucn,
+          marine_protection: props.marinBeskyttelse === 'ja',
+          marine_area_percentage: props.marineAreaPercentage,
+          forest_protection: props.skogvern === 'ja',
+        },
+        geometry: feature.geometry,
+        established_date: props.vernedato
+          ? `${props.vernedato.slice(0, 4)}-${props.vernedato.slice(4, 6)}-${props.vernedato.slice(6, 8)}`
+          : null,
+        area_size_km2: null,
+        managing_authority: props.forvaltningsmyndighet,
+        source_url: props.verneforskrift || props.faktaark,
+        metadata: {
+          cdda_id: props.cddaId,
+          uuid: props.uuid,
+          major_ecosystem_type: props.majorEcosystemType,
+          management_plan: props.forvaltningsplan,
+          management_plan_date: props.forvaltningsplanDato,
+          faktaark_url: props.faktaark,
+          verneforskrift_url: props.verneforskrift,
+        },
+        status: 'active',
+      };
+    }
+    
+    window.startUpload = async function() {
+      const btn = document.getElementById('uploadBtn');
+      btn.disabled = true;
+      btn.textContent = 'Laster opp...';
+      
+      document.getElementById('summary').classList.remove('show');
+      document.getElementById('log').innerHTML = '';
+      
+      try {
+        log('🔌 Kobler til Supabase...', 'info');
+        log('✅ Tilkoblet!', 'success');
+        
+        log(`📥 Henter fil: ${BUCKET_NAME}/${FILE_NAME}`, 'info');
+        
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .download(FILE_NAME);
+        
+        if (downloadError) {
+          log(`❌ Feil ved nedlasting: ${downloadError.message}`, 'error');
+          log('💡 Sjekk at filen finnes i Storage', 'warning');
+          btn.disabled = false;
+          btn.textContent = 'Prøv igjen';
+          return;
+        }
+        
+        const sizeKB = (fileData.size / 1024).toFixed(1);
+        log(`✅ Lastet ned ${sizeKB} KB`, 'success');
+        
+        log('📄 Parser GeoJSON...', 'info');
+        const text = await fileData.text();
+        const geojsonData = JSON.parse(text);
+        
+        if (!geojsonData.features || !Array.isArray(geojsonData.features)) {
+          log('❌ Ugyldig GeoJSON-format', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Prøv igjen';
+          return;
+        }
+        
+        const total = geojsonData.features.length;
+        log(`✅ Fant ${total} verneområder`, 'success');
+        log('', 'info');
+        log('📤 Starter opplasting...', 'info');
+        
+        const results = {
+          success: 0,
+          errors: [],
+        };
+        
+        for (let i = 0; i < geojsonData.features.length; i++) {
+          const feature = geojsonData.features[i];
+          const areaName = feature.properties?.navn || `Area ${i + 1}`;
+          
+          try {
+            const protectedArea = transformFeature(feature);
+            
+            const { error } = await supabase
+              .from('protected_areas')
+              .upsert(protectedArea, {
+                onConflict: 'area_id',
+              });
+            
+            if (error) {
+              log(`❌ [${i + 1}/${total}] ${areaName}: ${error.message}`, 'error');
+              results.errors.push({ name: areaName, error: error.message });
+            } else {
+              log(`✅ [${i + 1}/${total}] ${areaName}`, 'success');
+              results.success++;
+            }
+          } catch (error) {
+            log(`❌ [${i + 1}/${total}] ${areaName}: ${error.message}`, 'error');
+            results.errors.push({ name: areaName, error: error.message });
+          }
+          
+          updateProgress(i + 1, total);
+        }
+        
+        log('', 'info');
+        log('═'.repeat(50), 'info');
+        log('📊 OPPSUMMERING', 'info');
+        log(`✅ Vellykket: ${results.success}`, 'success');
+        log(`❌ Feilet: ${results.errors.length}`, results.errors.length > 0 ? 'error' : 'success');
+        log('═'.repeat(50), 'info');
+        log('', 'info');
+        log('🎉 Upload fullført!', 'success');
+        log('📍 Åpne NAVIGEN → NAV → Regulatory & Borders → SVALBARD → Toggle ON "Svalbard Protected Areas"', 'info');
+        
+        document.getElementById('successCount').textContent = results.success;
+        document.getElementById('errorCount').textContent = results.errors.length;
+        document.getElementById('summary').classList.add('show');
+        
+        btn.textContent = 'Last opp på nytt';
+        btn.disabled = false;
+        
+      } catch (error) {
+        log(`💥 Fatal feil: ${error.message}`, 'error');
+        console.error(error);
+        btn.disabled = false;
+        btn.textContent = 'Prøv igjen';
+      }
+    };
+  </script>
+</body>
+</html>

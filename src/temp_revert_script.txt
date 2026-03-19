@@ -1,0 +1,26 @@
+FILER SOM MÅ REVERSERES TIL CYAN:
+
+GJORT:
+✓ App.tsx - 2 steder 
+✓ Header.tsx - 5 steder
+✓ ModuleBar.tsx - 2 steder
+✓ MapCanvas.tsx - 4 steder
+✓ NavigenLogo.tsx - hex farger
+
+GJENSTÅR - ALLE AMBER → CYAN:
+- CompliancePanel.tsx
+- MapControls.tsx
+- SettingsDialog.tsx
+- ZoneManagerDialog.tsx
+- ZoneSelector.tsx
+- ActivitySelector.tsx
+- PolarCodeSelector.tsx
+- SegmentedControl.tsx
+- Toggle.tsx
+- FilterChip.tsx
+- MiniMap.tsx
+- ContextPanel.tsx
+- RulePanelRight.tsx
+- ExplanationPanel.tsx
+- ExplanationDrawer.tsx
+- RuleCardsArea.tsx

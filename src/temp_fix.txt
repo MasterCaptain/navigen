@@ -1,0 +1,18 @@
+Lines to remove (722-737):
+
+    // Check if debug borders should be shown
+    const showDebugBorders = regLayers?.debugBorders ?? debugBordersVisible ?? false;
+    if (!showDebugBorders) {
+      debugPolygonsRef.current.forEach(layer => {
+        try {
+          if (leafletMapRef.current && !isUnmountingRef.current) {
+            leafletMapRef.current.removeLayer(layer);
+          }
+        } catch (error) {
+          console.error('Error removing debug polygon:', error);
+        }
+      });
+      debugPolygonsRef.current = [];
+      console.log('🔵 DEBUG: Polygons disabled. debugBorders:', showDebugBorders);
+      return;
+    }

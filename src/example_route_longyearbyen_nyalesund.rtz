@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<route xmlns="http://www.cirm.org/RTZ/1/0" version="1.0" name="Longyearbyen - Ny-Ålesund">
+  <waypoints>
+    <waypoint id="1" name="Longyearbyen Departure">
+      <position lat="78.2232" lon="15.6267"/>
+      <leg>
+        <plannedSpeed>10.0</plannedSpeed>
+      </leg>
+    </waypoint>
+    <waypoint id="2" name="Isfjorden Exit">
+      <position lat="78.2800" lon="14.8500"/>
+      <leg>
+        <plannedSpeed>10.0</plannedSpeed>
+      </leg>
+    </waypoint>
+    <waypoint id="3" name="Prins Karls Forland West">
+      <position lat="78.5000" lon="10.8000"/>
+      <leg>
+        <plannedSpeed>10.0</plannedSpeed>
+      </leg>
+    </waypoint>
+    <waypoint id="4" name="Kongsfjorden Approach">
+      <position lat="78.8500" lon="11.5000"/>
+      <leg>
+        <plannedSpeed>8.0</plannedSpeed>
+      </leg>
+    </waypoint>
+    <waypoint id="5" name="Ny-Ålesund">
+      <position lat="78.9250" lon="11.9300"/>
+      <leg>
+        <plannedSpeed>5.0</plannedSpeed>
+      </leg>
+    </waypoint>
+  </waypoints>
+</route>

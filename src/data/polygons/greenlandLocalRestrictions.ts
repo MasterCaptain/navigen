@@ -1,0 +1,83 @@
+import type { RegulatoryPolygon } from '../geoTriggers';
+
+export const GREENLAND_LOCAL_RESTRICTION_POLYGONS: RegulatoryPolygon[] = [
+  {
+    id: 'GREENLAND_LOCAL_ILULISSAT_HARBOUR',
+    name: 'Ilulissat Harbour Local Restriction Area',
+    areaId: 'GREENLAND_LOCAL_ILULISSAT_HARBOUR',
+    triggerMode: 'inside',
+    coordinates: [
+      [69.2195, -51.1165],
+      [69.2255, -51.0900],
+      [69.2150, -51.0700],
+      [69.1960, -51.0820],
+      [69.1975, -51.1120],
+      [69.2195, -51.1165],
+    ],
+    useTurf: true,
+    sourceType: 'advisory',
+    layerKey: 'greenlandLocalRestrictions',
+    category: 'regulatory',
+    behavior: 'restricted',
+  },
+
+  {
+    id: 'GREENLAND_LOCAL_ILULISSAT_ICEFJORD',
+    name: 'Ilulissat Icefjord Local Restriction Area',
+    areaId: 'GREENLAND_LOCAL_ILULISSAT_ICEFJORD',
+    triggerMode: 'inside',
+    coordinates: [
+      [69.2700, -51.2500],
+      [69.3150, -51.0600],
+      [69.2200, -50.9000],
+      [69.1400, -51.0500],
+      [69.1700, -51.2400],
+      [69.2700, -51.2500],
+    ],
+    useTurf: true,
+    sourceType: 'advisory',
+    layerKey: 'greenlandLocalRestrictions',
+    category: 'regulatory',
+    behavior: 'restricted',
+  },
+
+  {
+    id: 'GREENLAND_LOCAL_TASIILAQ_APPROACH',
+    name: 'Tasiilaq Local Approach Restriction Area',
+    areaId: 'GREENLAND_LOCAL_TASIILAQ_APPROACH',
+    triggerMode: 'inside',
+    coordinates: [
+      [65.7200, -37.9000],
+      [65.7600, -37.5600],
+      [65.6200, -37.3300],
+      [65.5100, -37.5200],
+      [65.5400, -37.8600],
+      [65.7200, -37.9000],
+    ],
+    useTurf: true,
+    sourceType: 'advisory',
+    layerKey: 'greenlandLocalRestrictions',
+    category: 'regulatory',
+    behavior: 'local_guide_required',
+  },
+
+  {
+    id: 'GREENLAND_LOCAL_ITTOQQORTOORMIIT_APPROACH',
+    name: 'Ittoqqortoormiit Local Approach Restriction Area',
+    areaId: 'GREENLAND_LOCAL_ITTOQQORTOORMIIT_APPROACH',
+    triggerMode: 'inside',
+    coordinates: [
+      [70.6200, -22.8000],
+      [70.5600, -22.0500],
+      [70.3000, -21.9500],
+      [70.2000, -22.4500],
+      [70.3500, -22.9200],
+      [70.6200, -22.8000],
+    ],
+    useTurf: true,
+    sourceType: 'advisory',
+    layerKey: 'greenlandLocalRestrictions',
+    category: 'regulatory',
+    behavior: 'restricted',
+  },
+];
