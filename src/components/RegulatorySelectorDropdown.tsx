@@ -14,6 +14,14 @@ type RegLayers = {
   imoS60: boolean;
   svalbard12nm: boolean;
   svalbardProtectedAreas: boolean;
+  greenlandExpanded: boolean;
+  greenlandSermersooq: boolean;
+  greenlandProtectedAreas: boolean;
+  greenlandLocalRestrictions: boolean;
+  canadaExpanded: boolean;
+  canadaNordreg: boolean;
+  canadaLancasterSound: boolean;
+  canadaNwpCorridor: boolean;
   marpolAreas: boolean;
   solasZones: boolean;
   debugBorders: boolean;
@@ -38,11 +46,17 @@ export function RegulatorySelectorDropdown({
     value.eez200nm,
   ].filter(Boolean).length;
 
-  const zoneCount = [
+    const zoneCount = [
     value.imoN60,
     value.imoS60,
     value.svalbard12nm,
     value.svalbardProtectedAreas,
+    value.greenlandSermersooq,
+    value.greenlandProtectedAreas,
+    value.greenlandLocalRestrictions,
+    value.canadaNordreg,
+    value.canadaLancasterSound,
+    value.canadaNwpCorridor,
     value.marpolAreas,
     value.solasZones,
   ].filter(Boolean).length;
@@ -641,6 +655,137 @@ export function RegulatorySelectorDropdown({
           <div className="flex-1">
             <span className="text-[10px] text-slate-300">Local Restrictions</span>
             <div className="text-[8px] text-slate-500 mt-0.5">Landing / operational rules</div>
+          </div>
+        </div>
+      </button>
+    </div>
+  )}
+</div>
+
+{/* CANADA COLLAPSIBLE CATEGORY */}
+<div className="space-y-1">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onChange({ ...value, canadaExpanded: !value.canadaExpanded });
+    }}
+    className="w-full p-2 rounded border border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 transition-all text-left group"
+  >
+    <div className="flex items-center gap-2.5">
+      {value.canadaExpanded ? (
+        <ChevronDown className="w-3 h-3 text-cyan-400" />
+      ) : (
+        <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-slate-300" />
+      )}
+      <span className="text-[11px] text-slate-300 font-semibold">CANADA</span>
+      <span className="text-[9px] text-slate-500 ml-auto">
+        {[
+          value.canadaNordreg,
+          value.canadaLancasterSound,
+          value.canadaNwpCorridor,
+        ].filter(Boolean).length}
+        /3 active
+      </span>
+    </div>
+  </button>
+
+  {value.canadaExpanded && (
+    <div className="ml-4 space-y-1">
+      <button
+        onClick={() =>
+          onChange({ ...value, canadaNordreg: !value.canadaNordreg })
+        }
+        className="w-full p-2 rounded border border-slate-700/50 bg-slate-800/20 hover:bg-slate-800/40 transition-all text-left group"
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`w-3 h-3 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+              value.canadaNordreg
+                ? 'bg-cyan-500 border-cyan-500'
+                : 'border-slate-600 group-hover:border-slate-500'
+            }`}
+          >
+            {value.canadaNordreg && (
+              <svg
+                className="w-1.5 h-1.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] text-slate-300">NORDREG Reporting Zone</span>
+            <div className="text-[8px] text-slate-500 mt-0.5">Mandatory reporting / Arctic Canada</div>
+          </div>
+        </div>
+      </button>
+
+      <button
+        onClick={() =>
+          onChange({ ...value, canadaLancasterSound: !value.canadaLancasterSound })
+        }
+        className="w-full p-2 rounded border border-slate-700/50 bg-slate-800/20 hover:bg-slate-800/40 transition-all text-left group"
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`w-3 h-3 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+              value.canadaLancasterSound
+                ? 'bg-cyan-500 border-cyan-500'
+                : 'border-slate-600 group-hover:border-slate-500'
+            }`}
+          >
+            {value.canadaLancasterSound && (
+              <svg
+                className="w-1.5 h-1.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] text-slate-300">Lancaster Sound MPA</span>
+            <div className="text-[8px] text-slate-500 mt-0.5">Protected area / environmental control</div>
+          </div>
+        </div>
+      </button>
+
+      <button
+        onClick={() =>
+          onChange({ ...value, canadaNwpCorridor: !value.canadaNwpCorridor })
+        }
+        className="w-full p-2 rounded border border-slate-700/50 bg-slate-800/20 hover:bg-slate-800/40 transition-all text-left group"
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`w-3 h-3 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+              value.canadaNwpCorridor
+                ? 'bg-cyan-500 border-cyan-500'
+                : 'border-slate-600 group-hover:border-slate-500'
+            }`}
+          >
+            {value.canadaNwpCorridor && (
+              <svg
+                className="w-1.5 h-1.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] text-slate-300">Northwest Passage Corridor</span>
+            <div className="text-[8px] text-slate-500 mt-0.5">Transit context / test corridor</div>
           </div>
         </div>
       </button>

@@ -19,7 +19,6 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
   const baseOpacity = active ? 0.95 : 0.8;
   const baseFillOpacity = active ? 0.18 : 0.08;
 
-  // Seasonal / conditional zones first
   if (
     polygon.areaId?.includes('AUGUST') ||
     polygon.areaId?.includes('SEPTEMBER') ||
@@ -35,7 +34,6 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
     };
   }
 
-  // Local operational Greenland zones
   if (polygon.layerKey === 'greenlandLocalRestrictions') {
     return {
       color: '#00B4D8',
@@ -47,7 +45,6 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
     };
   }
 
-  // Protected / sensitive areas
   if (polygon.layerKey === 'greenlandProtectedAreas') {
     return {
       color: '#FF3B3B',
@@ -59,7 +56,6 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
     };
   }
 
-  // Sermersooq / proposal / advisory zoning
   if (polygon.layerKey === 'greenlandSermersooq') {
     return {
       color: '#A855F7',
@@ -71,7 +67,6 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
     };
   }
 
-  // Fallback
   return {
     color: '#00ffff',
     weight: active ? 3 : 2,
@@ -79,6 +74,53 @@ function getGreenlandZoneStyle(polygon: any, active: boolean) {
     dashArray: '6 4',
     fillColor: '#00ffff',
     fillOpacity: baseFillOpacity,
+  };
+}
+
+// ===============================
+// CANADA STYLE RESOLVER
+// ===============================
+function getCanadaZoneStyle(polygon: any, active: boolean) {
+  if (polygon.layerKey === 'canadaNordreg') {
+    return {
+      color: '#06b6d4',
+      weight: active ? 3 : 2,
+      opacity: active ? 0.95 : 0.8,
+      dashArray: '8 4',
+      fillColor: '#06b6d4',
+      fillOpacity: active ? 0.12 : 0.05,
+    };
+  }
+
+  if (polygon.layerKey === 'canadaLancasterSound') {
+    return {
+      color: '#ef4444',
+      weight: active ? 3 : 2,
+      opacity: active ? 0.95 : 0.85,
+      dashArray: undefined,
+      fillColor: '#ef4444',
+      fillOpacity: active ? 0.18 : 0.10,
+    };
+  }
+
+  if (polygon.layerKey === 'canadaNwpCorridor') {
+    return {
+      color: '#a855f7',
+      weight: active ? 3 : 2,
+      opacity: active ? 0.95 : 0.8,
+      dashArray: '10 6',
+      fillColor: '#a855f7',
+      fillOpacity: active ? 0.10 : 0.04,
+    };
+  }
+
+  return {
+    color: '#00ffff',
+    weight: active ? 3 : 2,
+    opacity: active ? 0.95 : 0.8,
+    dashArray: '6 4',
+    fillColor: '#00ffff',
+    fillOpacity: active ? 0.10 : 0.05,
   };
 }
 
@@ -348,6 +390,9 @@ interface MapCanvasProps {
     greenlandSermersooq: boolean;
     greenlandProtectedAreas: boolean;
     greenlandLocalRestrictions: boolean;
+    canadaNordreg?: boolean;
+    canadaLancasterSound?: boolean;
+    canadaNwpCorridor?: boolean;
     marpolAreas: boolean;
     solasZones: boolean;
     debugBorders: boolean;
@@ -373,16 +418,14 @@ interface MapCanvasProps {
     coordinates: [number, number][];
     status: string;
   }>;
-
-appZoneActivityLog?: {
-  id: string;
-  areaId: string;
-  eventType: 'ENTRY' | 'EXIT';
-  timestampUtc: string;
-  lat: number;
-  lng: number;
-}[];
-
+  appZoneActivityLog?: {
+    id: string;
+    areaId: string;
+    eventType: 'ENTRY' | 'EXIT';
+    timestampUtc: string;
+    lat: number;
+    lng: number;
+  }[];
   aisEnabled?: boolean;
 }
 
@@ -453,12 +496,17 @@ export function MapCanvas({
   const territorial12nmLayerRef = useRef<any>(null);
   const greenlandSermersooqLayerRef = useRef<any>(null);
   const greenlandLocalRestrictionsLayerRef = useRef<any>(null);
+  const canadaNordregLayerRef = useRef<any>(null);
+  const canadaLancasterLayerRef = useRef<any>(null);
+  const canadaNwpLayerRef = useRef<any>(null);
 
   const regulatoryPolygonRefs = useRef<Record<string, any>>({});
   const protectedPolygonRefs = useRef<Record<string, any[]>>({});
 
   const eezGeoJsonRef = useRef<any>(null);
   const territorial12nmGeoJsonRef = useRef<any>(null);
+
+  const nordregGeoJsonRef = useRef<any>(null);
 
   const overlayLayersRef = useRef<Record<string, any>>({});
 
@@ -561,22 +609,22 @@ export function MapCanvas({
   }, []);
 
   useEffect(() => {
-  if (!leafletMapRef.current || !zoneActivityLayerRef.current) return;
+    if (!leafletMapRef.current || !zoneActivityLayerRef.current) return;
 
-  const layer = zoneActivityLayerRef.current;
-  layer.clearLayers();
+    const layer = zoneActivityLayerRef.current;
+    layer.clearLayers();
 
-  appZoneActivityLog.forEach((entry) => {
-    const color = entry.eventType === 'ENTRY' ? '#00ff88' : '#ff4444';
+    appZoneActivityLog.forEach((entry) => {
+      const color = entry.eventType === 'ENTRY' ? '#00ff88' : '#ff4444';
 
-    const marker = L.circleMarker([entry.lat, entry.lng], {
-      radius: 6,
-      color,
-      weight: 2,
-      fillOpacity: 0.8,
-    });
+      const marker = L.circleMarker([entry.lat, entry.lng], {
+        radius: 6,
+        color,
+        weight: 2,
+        fillOpacity: 0.8,
+      });
 
-    marker.bindPopup(`
+      marker.bindPopup(`
       <b>${entry.eventType}</b><br/>
       ${entry.areaId}<br/>
       ${entry.timestampUtc}<br/>
@@ -584,9 +632,9 @@ export function MapCanvas({
       Lng: ${entry.lng.toFixed(4)}
     `);
 
-    marker.addTo(layer);
-  });
-}, [appZoneActivityLog]);
+      marker.addTo(layer);
+    });
+  }, [appZoneActivityLog]);
 
   useEffect(() => {
     const fetchGreenlandProtectedGeoJson = async () => {
@@ -693,10 +741,10 @@ export function MapCanvas({
         localZones.forEach((zone) => {
           const active = activeAreaIds.includes(zone.areaId);
 
-const polygon = L.polygon(zone.coordinates, {
-  ...getGreenlandZoneStyle(zone, active),
-  pane: 'vectorPane',
-});
+          const polygon = L.polygon(zone.coordinates, {
+            ...getGreenlandZoneStyle(zone, active),
+            pane: 'vectorPane',
+          });
 
           layerGroup.addLayer(polygon);
 
@@ -730,7 +778,167 @@ const polygon = L.polygon(zone.coordinates, {
     regLayers?.enabled,
     regLayers?.regulatoryZonesEnabled,
     onRulecardSelect,
+    activeAreaIds,
   ]);
+
+// Canada NORDREG render (real GeoJSON)
+useEffect(() => {
+  if (!mapReady || !leafletMapRef.current || !canadaNordregLayerRef.current) return;
+
+  const renderCanadaNordreg = async () => {
+    const layerGroup = canadaNordregLayerRef.current;
+    layerGroup.clearLayers();
+
+    if (!regLayers?.canadaNordreg) return;
+
+    try {
+      const L = await import('leaflet');
+
+      if (!nordregGeoJsonRef.current) {
+        const response = await fetch('/data/regulations/canada/nordreg.geojson');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} loading NORDREG GeoJSON`);
+        }
+        nordregGeoJsonRef.current = await response.json();
+        console.log('✅ NORDREG GeoJSON cached');
+      }
+
+      const geoLayer = L.geoJSON(nordregGeoJsonRef.current, {
+        style: {
+          color: '#06b6d4',
+          weight: 2,
+          opacity: 0.95,
+          dashArray: '8 4',
+          fillColor: '#06b6d4',
+          fillOpacity: 0.08,
+        },
+        pane: 'vectorPane',
+        smoothFactor: 1,
+        onEachFeature: (_feature, layer) => {
+          layer.bindTooltip(
+            `<strong>Canada NORDREG Reporting Zone</strong><br/>Mandatory reporting / Arctic Canada`,
+            {
+              sticky: true,
+              className: 'debug-polygon-tooltip',
+            }
+          );
+
+          layer.on('click', () => {
+            if (onRulecardSelect) {
+              onRulecardSelect('CANADA_NORDREG');
+            }
+          });
+        },
+      });
+
+      geoLayer.addTo(layerGroup);
+      console.log('✅ Canada NORDREG rendered from GeoJSON');
+    } catch (error) {
+      console.error('❌ Canada NORDREG render error:', error);
+    }
+  };
+
+  renderCanadaNordreg();
+}, [mapReady, regLayers?.canadaNordreg, onRulecardSelect]);
+
+  // Canada Lancaster Sound render
+  useEffect(() => {
+    if (!mapReady || !leafletMapRef.current || !canadaLancasterLayerRef.current) return;
+
+    const renderCanadaLancaster = async () => {
+      const layerGroup = canadaLancasterLayerRef.current;
+      layerGroup.clearLayers();
+
+      if (!regLayers?.canadaLancasterSound) return;
+
+      try {
+        const L = await import('leaflet');
+
+        const zones = REGULATORY_POLYGONS.filter(
+          (polygon) => polygon.layerKey === 'canadaLancasterSound'
+        );
+
+        zones.forEach((zone) => {
+          const active = activeAreaIds.includes(zone.areaId);
+
+          const polygon = L.polygon([zone.coordinates], {
+            ...getCanadaZoneStyle(zone, active),
+            pane: 'vectorPane',
+            smoothFactor: 1,
+          });
+
+          layerGroup.addLayer(polygon);
+
+          polygon.bindTooltip(
+            `<strong>${zone.name}</strong><br/>Lancaster Sound / Tallurutiup Imanga`,
+            {
+              sticky: true,
+              className: 'debug-polygon-tooltip',
+            }
+          );
+
+          polygon.on('click', () => {
+            if (onRulecardSelect && zone.rulecardId) {
+              onRulecardSelect(zone.rulecardId);
+            }
+          });
+        });
+      } catch (error) {
+        console.error('❌ Canada Lancaster render error:', error);
+      }
+    };
+
+    renderCanadaLancaster();
+  }, [mapReady, regLayers?.canadaLancasterSound, onRulecardSelect, activeAreaIds]);
+
+  // Canada NWP Corridor render
+  useEffect(() => {
+    if (!mapReady || !leafletMapRef.current || !canadaNwpLayerRef.current) return;
+
+    const renderCanadaNwp = async () => {
+      const layerGroup = canadaNwpLayerRef.current;
+      layerGroup.clearLayers();
+
+      if (!regLayers?.canadaNwpCorridor) return;
+
+      try {
+        const L = await import('leaflet');
+
+        const zones = REGULATORY_POLYGONS.filter(
+          (polygon) => polygon.layerKey === 'canadaNwpCorridor'
+        );
+
+        zones.forEach((zone) => {
+          const active = activeAreaIds.includes(zone.areaId);
+
+          const polygon = L.polygon(zone.coordinates, {
+            ...getCanadaZoneStyle(zone, active),
+            pane: 'vectorPane',
+          });
+
+          layerGroup.addLayer(polygon);
+
+          polygon.bindTooltip(
+            `<strong>${zone.name}</strong><br/>Northwest Passage transit corridor`,
+            {
+              sticky: true,
+              className: 'debug-polygon-tooltip',
+            }
+          );
+
+          polygon.on('click', () => {
+            if (onRulecardSelect && zone.rulecardId) {
+              onRulecardSelect(zone.rulecardId);
+            }
+          });
+        });
+      } catch (error) {
+        console.error('❌ Canada NWP render error:', error);
+      }
+    };
+
+    renderCanadaNwp();
+  }, [mapReady, regLayers?.canadaNwpCorridor, onRulecardSelect, activeAreaIds]);
 
   // Map init
   useEffect(() => {
@@ -762,6 +970,7 @@ const polygon = L.polygon(zone.coordinates, {
           minZoom: 2,
           maxZoom: 18,
           maxBounds: undefined,
+          maxBoundsViscosity: 1.0,
           worldCopyJump: true,
         });
 
@@ -770,6 +979,10 @@ const polygon = L.polygon(zone.coordinates, {
         leafletMapRef.current = map;
         setCurrentZoom(10);
         setMapReady(true);
+
+        setTimeout(() => {
+  map.invalidateSize();
+}, 0);
 
         map.createPane('basemapPane');
         map.getPane('basemapPane')!.style.zIndex = '200';
@@ -806,6 +1019,9 @@ const polygon = L.polygon(zone.coordinates, {
         greenlandSermersooqLayerRef.current = L.layerGroup().addTo(map);
         greenlandProtectedLayerRef.current = L.layerGroup().addTo(map);
         greenlandLocalRestrictionsLayerRef.current = L.layerGroup().addTo(map);
+        canadaNordregLayerRef.current = L.layerGroup().addTo(map);
+        canadaLancasterLayerRef.current = L.layerGroup().addTo(map);
+        canadaNwpLayerRef.current = L.layerGroup().addTo(map);
 
         const bathymetryLayer = L.tileLayer(
           'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -1250,13 +1466,13 @@ const polygon = L.polygon(zone.coordinates, {
 
         console.log('Rendering Greenland zones now:', greenlandZones);
 
-        const active = activeAreaIds.includes(zone.areaId);
-
         greenlandZones.forEach((zone) => {
-const polygon = L.polygon(zone.coordinates, {
-  ...getGreenlandZoneStyle(zone, active),
-  pane: 'vectorPane',
-});
+          const active = activeAreaIds.includes(zone.areaId);
+
+          const polygon = L.polygon(zone.coordinates, {
+            ...getGreenlandZoneStyle(zone, active),
+            pane: 'vectorPane',
+          });
 
           layerGroup.addLayer(polygon);
 
@@ -1288,6 +1504,7 @@ const polygon = L.polygon(zone.coordinates, {
     regLayers?.regulatoryZonesEnabled,
     regLayers?.greenlandSermersooq,
     onRulecardSelect,
+    activeAreaIds,
   ]);
 
   // Regulatory polygons general debug render
@@ -1413,6 +1630,30 @@ const polygon = L.polygon(zone.coordinates, {
         }
 
         if (
+          polygon.layerKey === 'canadaNordreg' &&
+          regLayers.regulatoryZonesEnabled &&
+          regLayers.canadaNordreg
+        ) {
+          return true;
+        }
+
+        if (
+          polygon.layerKey === 'canadaLancasterSound' &&
+          regLayers.regulatoryZonesEnabled &&
+          regLayers.canadaLancasterSound
+        ) {
+          return true;
+        }
+
+        if (
+          polygon.layerKey === 'canadaNwpCorridor' &&
+          regLayers.regulatoryZonesEnabled &&
+          regLayers.canadaNwpCorridor
+        ) {
+          return true;
+        }
+
+        if (
           polygon.id.includes('MARPOL') &&
           regLayers.regulatoryZonesEnabled &&
           regLayers.marpolAreas
@@ -1434,7 +1675,10 @@ const polygon = L.polygon(zone.coordinates, {
           polygon.areaId === 'IMO_N60' ||
           polygon.layerKey === 'greenlandSermersooq' ||
           polygon.layerKey === 'greenlandProtectedAreas' ||
-          polygon.layerKey === 'greenlandLocalRestrictions'
+          polygon.layerKey === 'greenlandLocalRestrictions' ||
+          polygon.layerKey === 'canadaNordreg' ||
+          polygon.layerKey === 'canadaLancasterSound' ||
+          polygon.layerKey === 'canadaNwpCorridor'
         ) {
           return;
         }
@@ -1446,29 +1690,35 @@ const polygon = L.polygon(zone.coordinates, {
 
         let style: any;
 
-if (
-  polygon.layerKey === 'greenlandLocalRestrictions' ||
-  polygon.layerKey === 'greenlandProtectedAreas' ||
-  polygon.layerKey === 'greenlandSermersooq' ||
-  polygon.areaId?.includes('AUGUST') ||
-  polygon.areaId?.includes('SEPTEMBER') ||
-  polygon.areaId?.includes('CLOSED')
-) {
-  style = getGreenlandZoneStyle(polygon, active);
-} else if (isProtected) {
-  style = active ? PROTECTED_ACTIVE : PROTECTED_BASE;
-} else if (isSvalbard12nm) {
-  style = {
-    color: '#000000',
-    weight: 1,
-    opacity: 0.8,
-    dashArray: '5 5',
-    fill: false,
-    fillOpacity: 0,
-  };
-} else {
-  style = active ? REG_ACTIVE : REG_BASE;
-}
+        if (
+          polygon.layerKey === 'greenlandLocalRestrictions' ||
+          polygon.layerKey === 'greenlandProtectedAreas' ||
+          polygon.layerKey === 'greenlandSermersooq' ||
+          polygon.areaId?.includes('AUGUST') ||
+          polygon.areaId?.includes('SEPTEMBER') ||
+          polygon.areaId?.includes('CLOSED')
+        ) {
+          style = getGreenlandZoneStyle(polygon, active);
+        } else if (
+          polygon.layerKey === 'canadaNordreg' ||
+          polygon.layerKey === 'canadaLancasterSound' ||
+          polygon.layerKey === 'canadaNwpCorridor'
+        ) {
+          style = getCanadaZoneStyle(polygon, active);
+        } else if (isProtected) {
+          style = active ? PROTECTED_ACTIVE : PROTECTED_BASE;
+        } else if (isSvalbard12nm) {
+          style = {
+            color: '#000000',
+            weight: 1,
+            opacity: 0.8,
+            dashArray: '5 5',
+            fill: false,
+            fillOpacity: 0,
+          };
+        } else {
+          style = active ? REG_ACTIVE : REG_BASE;
+        }
 
         const poly = L.polygon(
           polygon.coordinates.map(([lat, lng]) => [lat, lng]),
@@ -1571,6 +1821,9 @@ if (
     regLayers?.greenlandSermersooq,
     regLayers?.greenlandProtectedAreas,
     regLayers?.greenlandLocalRestrictions,
+    regLayers?.canadaNordreg,
+    regLayers?.canadaLancasterSound,
+    regLayers?.canadaNwpCorridor,
     regLayers?.marpolAreas,
     regLayers?.solasZones,
     regLayers?.debugBorders,
@@ -2403,14 +2656,14 @@ if (
 
   return (
     <div className="absolute inset-0 bg-[#0a1628] z-0">
-      <div
-        ref={mapRef}
-        className="absolute inset-0 w-full h-full"
-        style={{
-          cursor: 'grab',
-          zIndex: 1,
-        }}
-      />
+  <div
+    ref={mapRef}
+    className="absolute inset-0 w-full h-full"
+    style={{
+      cursor: 'grab',
+      zIndex: 1,
+    }}
+  />
 
       {mapReady && leafletMapRef.current && (
         <WindArrows

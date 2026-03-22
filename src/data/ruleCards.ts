@@ -241,6 +241,44 @@ export const ruleCards: RuleCard[] = [
   },
 
   {
+  id: "CANADA_NORDREG",
+  version: "1.0.0",
+  status: "Active",
+  severity: "MUST",
+  statement: "All vessels entering the Canadian Arctic NORDREG zone must report in accordance with Canadian reporting requirements.",
+  authority: {
+    regime: "National",
+    instrument: "NORDREG",
+    reference: "Canada Shipping Act / NORDREG"
+  },
+  applicability: {
+    areas: [{ areaId: "CANADA_NORDREG", condition: "INSIDE" }],
+    vessel: { type: ["ANY"], iceClass: ["ANY"], flag: ["ANY"] },
+    time: { start: null, end: null, season: null }
+  },
+  content: {
+    rationale: "Canadian Arctic waters are subject to mandatory reporting requirements intended to support navigation safety, ice awareness, traffic monitoring, and environmental protection.",
+    actions: [
+      { text: "Submit initial NORDREG report prior to entry.", type: "REPORT" },
+      { text: "Maintain reporting updates as required while operating within the zone.", type: "REPORT" },
+      { text: "Submit final or exit report when leaving the reporting area if required.", type: "REPORT" }
+    ],
+    exceptions: [],
+    links: []
+  },
+  ops: {
+    audience: ["BRIDGE", "MASTER", "SAFETY"],
+    module: "COMPLIANCE",
+    tags: ["CANADA", "ARCTIC", "NORDREG", "REPORTING"]
+  },
+  metadata: {
+    createdBy: "NAVIGEN",
+    createdAt: "2026-03-21T00:00:00Z",
+    updatedAt: "2026-03-21T00:00:00Z"
+  }
+},
+
+  {
     id: "POLAR_003",
     version: "1.0.0",
     status: "Active",

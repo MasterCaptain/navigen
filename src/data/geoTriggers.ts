@@ -8,6 +8,7 @@ import { GREENLAND_LOCAL_RESTRICTION_POLYGONS } from './polygons/greenlandLocalR
 import { GREENLAND_PROTECTED_POLYGONS } from './polygons/greenlandProtected';
 import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon';
 import { polygon as turfPolygon, point as turfPoint } from '@turf/helpers';
+import { LANCASTER_SOUND_MPA_POLYGONS } from './polygons/lancasterSoundMpa';
 
 export type LatLng = [number, number]; // [lat, lng]
 export type LatLngObject = { lat: number; lng: number };
@@ -29,6 +30,9 @@ export type RegulatoryLayerKey =
   | 'greenlandSermersooq'
   | 'greenlandProtectedAreas'
   | 'greenlandLocalRestrictions'
+  | 'canadaNordreg'
+  | 'canadaLancasterSound'
+  | 'canadaNwpCorridor'
   | 'marpolAreas'
   | 'solasZones';
 
@@ -206,10 +210,6 @@ const IMO_N60_BOUNDARY_LINE: LatLng[] = [
 
 /**
  * Normalize IMO boundary longitude into a continuous east-going range.
- * Example:
- *  -169 stays -169
- *  180 stays 180
- *  -179 would become 181 if needed
  */
 function normalizeBoundaryLongitudes(boundary: LatLng[]): LatLng[] {
   if (boundary.length === 0) return [];
@@ -278,7 +278,6 @@ export function isInsideIMON60(vesselPosition: LatLngObject): boolean {
   const boundaryLat = getBoundaryLatitudeAtLng(normalizedLng, IMO_N60_BOUNDARY_NORMALIZED);
 
   if (boundaryLat === null) {
-    // Safe fallback for longitudes outside the defined west/east range
     return vesselPosition.lat >= 60;
   }
 
@@ -306,7 +305,8 @@ export function getActiveAreaIds(vesselPosition: LatLngObject): string[] {
     if (
       polygon.areaId === 'IMO_N60' ||
       polygon.layerKey === 'greenlandProtectedAreas' ||
-      polygon.layerKey === 'greenlandLocalRestrictions'
+      polygon.layerKey === 'greenlandLocalRestrictions' ||
+      polygon.layerKey === 'canadaNordreg'
     ) {
       console.log('🔵 AREA TEST:', {
         polygonId: polygon.id,
@@ -314,11 +314,12 @@ export function getActiveAreaIds(vesselPosition: LatLngObject): string[] {
         name: polygon.name,
         position: vesselPosition,
         inside,
-        method: polygon.areaId === 'IMO_N60'
-          ? 'Boundary interpolation'
-          : polygon.useTurf
-            ? 'Turf.js'
-            : 'Ray Casting',
+        method:
+          polygon.areaId === 'IMO_N60'
+            ? 'Boundary interpolation'
+            : polygon.useTurf
+              ? 'Turf.js'
+              : 'Ray Casting',
         polygonPoints: polygon.coordinates.length,
       });
     }
@@ -392,12 +393,8 @@ export function getActiveRules(vesselPosition: LatLngObject): RuleCard[] {
 
 export const REGULATORY_POLYGONS: RegulatoryPolygon[] = [
   ...TERRITORIAL_POLYGONS,
+  ...LANCASTER_SOUND_MPA_POLYGONS,
 
-  /**
-   * Detection object for IMO N60.
-   * Coordinates remain here for structure consistency,
-   * but actual detection uses isInsideIMON60().
-   */
   {
     id: 'imo_n60_area',
     name: 'IMO Polar Code N60 Area',
@@ -414,4 +411,29 @@ export const REGULATORY_POLYGONS: RegulatoryPolygon[] = [
   ...GREENLAND_SERMERSOOQ_POLYGONS,
   ...GREENLAND_LOCAL_RESTRICTION_POLYGONS,
   ...GREENLAND_PROTECTED_POLYGONS,
+
+  // =====================
+  // CANADA (REAL NORDREG + TEST SUPPORT)
+  // =====================
+
+
+
+
+  {
+  id: 'canada_nwp_corridor',
+  name: 'Northwest Passage Corridor',
+  areaId: 'CANADA_NWP',
+  triggerMode: 'inside',
+  coordinates: [
+    [70, -130],
+    [70, -60],
+    [80, -60],
+    [80, -130],
+  ],
+  useTurf: false,
+  sourceType: 'advisory',
+  layerKey: 'canadaNwpCorridor',
+  category: 'proposal',
+  rulecardId: null,
+},
 ];
