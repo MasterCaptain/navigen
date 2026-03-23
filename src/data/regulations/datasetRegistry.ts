@@ -137,6 +137,17 @@ export const DATASET_REGISTRY: DatasetRegistryItem[] = [
     coverage: null,
     tags: ['solas', 'global'],
   },
+  {
+  id: 'canada_nordreg',
+  name: 'Canada NORDREG Zone',
+  category: 'custom',
+  region: 'arctic',
+  source: '/data/regulations/nordreg.geojson',
+  enabledByDefault: true,
+  priority: 25,
+  coverage: { minLat: 60, maxLat: 90, minLng: -141, maxLng: -50 },
+  tags: ['canada', 'nordreg', 'reporting'],
+},
 ];
 
 export function datasetMatchesRegion(

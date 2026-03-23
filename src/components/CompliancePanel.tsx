@@ -26,6 +26,20 @@ interface ComplianceRule {
   evaluationReason?: string;
 }
 
+type RouteComplianceEvent = {
+  id: string;
+  areaId: string;
+  zoneName: string;
+  eventType: 'ENTRY' | 'EXIT';
+  lat: number;
+  lon: number;
+  legIndex: number;
+  distanceFromLegStartNm: number;
+  level: 'MUST' | 'SHOULD' | 'CONSIDER';
+  title: string;
+  action: string;
+};
+
 interface CompliancePanelProps {
   activeZone: string;
   activeActivity: string;
@@ -33,6 +47,8 @@ interface CompliancePanelProps {
   detectedAreas: string[];
   vesselPosition: { lat: number; lng: number };
   activeRoute?: RouteWithWaypoints | null;
+  activeRulesFromEngine?: RuleCard[];
+  routeComplianceEvents?: RouteComplianceEvent[];
 }
 
 export function CompliancePanel({
@@ -41,7 +57,9 @@ export function CompliancePanel({
   activePolarCode,
   detectedAreas,
   vesselPosition,
-  activeRoute
+  activeRoute,
+  activeRulesFromEngine,
+  routeComplianceEvents = []
 }: CompliancePanelProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     MUST: false,
@@ -53,6 +71,13 @@ export function CompliancePanel({
 
   const [checkedRules, setCheckedRules] = useState<Record<string, boolean>>({});
   const [selectedRule, setSelectedRule] = useState<RuleReference | null>(null);
+
+
+  const nextEvent = useMemo(() => {
+  return routeComplianceEvents
+    .filter(event => event.eventType === 'ENTRY')
+    .sort((a, b) => a.distanceFromLegStartNm - b.distanceFromLegStartNm)[0] ?? null;
+}, [routeComplianceEvents]);
 
   const toggleSection = (level: string) => {
     setExpandedSections(prev => ({ ...prev, [level]: !prev[level] }));
@@ -80,8 +105,12 @@ export function CompliancePanel({
   };
 
   const activeSpatialRules = useMemo(() => {
-    return getActiveRules(vesselPosition);
-  }, [vesselPosition.lat, vesselPosition.lng]);
+  if (activeRulesFromEngine && activeRulesFromEngine.length > 0) {
+    return activeRulesFromEngine;
+  }
+
+  return getActiveRules(vesselPosition);
+}, [activeRulesFromEngine, vesselPosition.lat, vesselPosition.lng]);
 
   const staticRules = useMemo(() => {
     return generateStaticComplianceRules(
@@ -112,13 +141,31 @@ export function CompliancePanel({
       .filter(rule => !isGreenlandRuleCard(rule))
       .map(mapRuleCardToComplianceRule);
   }, [activeSpatialRules]);
+  
+  const routeEventRules = useMemo(() => {
+  return routeComplianceEvents.map(event => ({
+    id: event.id,
+    level: event.level,
+    category: 'CANADA',
+    title: event.title,
+    description: event.action,
+    reference: `${event.zoneName} • Leg ${event.legIndex + 1} • ${event.distanceFromLegStartNm.toFixed(1)} NM`,
+    sortGroup: -1,
+    sortWeight: 2000,
+  }));
+}, [routeComplianceEvents]);
 
   const evaluatedGreenlandRulesMapped = useMemo(() => {
     return evaluatedGreenlandRules.map(mapEvaluatedRuleToComplianceRule);
   }, [evaluatedGreenlandRules]);
 
   const rules = useMemo(() => {
-    const merged = [...evaluatedGreenlandRulesMapped, ...spatialRulesMapped, ...staticRules];
+    const merged = [
+  ...evaluatedGreenlandRulesMapped,
+  ...spatialRulesMapped,
+  ...routeEventRules,
+  ...staticRules,
+];
     const deduped = new Map<string, ComplianceRule>();
 
     for (const rule of merged) {
@@ -220,6 +267,12 @@ export function CompliancePanel({
             </span>
           )}
 
+          {rules.some(rule => rule.category === 'CANADA') && (
+            <span className="px-2 py-1 bg-amber-500/20 border border-amber-500/50 rounded text-[10px] text-amber-400 font-bold">
+              Canada / NORDREG
+            </span>
+          )}
+
           <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-[10px] text-cyan-400 font-bold">
             SOLAS
           </span>
@@ -235,6 +288,29 @@ export function CompliancePanel({
           )}
         </div>
       </div>
+
+      {nextEvent && (
+  <div className="px-4 py-3 border-b border-slate-700/50 bg-amber-500/5 flex-shrink-0">
+    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-400">
+        Upcoming Route Action
+      </div>
+
+      <div className="mt-2 text-sm font-semibold text-white">
+        {nextEvent.title}
+      </div>
+
+      <div className="mt-1 text-xs text-slate-300">
+        {nextEvent.action}
+      </div>
+
+      <div className="mt-2 text-[11px] text-slate-400">
+        {nextEvent.zoneName} • Leg {nextEvent.legIndex + 1} •{' '}
+        {nextEvent.distanceFromLegStartNm.toFixed(1)} NM
+      </div>
+    </div>
+  </div>
+)}
 
       <div className="flex-1 overflow-y-auto">
         {routeAnalysis && (
@@ -604,6 +680,9 @@ function formatEvaluatedSourceCategory(source: string): string {
       return 'GREENLAND PROPOSAL';
     case 'GREENLAND_LOCAL':
       return 'GREENLAND LOCAL';
+    case 'CANADA':
+    case 'CANADA_NORDREG':
+      return 'CANADA';
     case 'IMO_POLAR':
       return 'IMO POLAR';
     case 'SOLAS':
@@ -644,6 +723,16 @@ function formatCategory(rule: RuleCard): string {
     return 'GREENLAND LOCAL';
   }
 
+    if (
+    areaIds.includes('CANADA_NORDREG') ||
+    areaIds.some(areaId => areaId.startsWith('CANADA_')) ||
+    ruleId.includes('CANADA') ||
+    instrument.toLowerCase().includes('nordreg') ||
+    regime.toLowerCase().includes('national')
+  ) {
+    return 'CANADA';
+  }
+
   if (instrument.toLowerCase().includes('polar')) return 'IMO POLAR';
   if (instrument.toLowerCase().includes('svalbard')) return 'SVALBARD';
   if (instrument.toLowerCase().includes('marpol')) return 'MARPOL';
@@ -655,22 +744,26 @@ function formatCategory(rule: RuleCard): string {
 
 function getCategorySortGroup(category: string): number {
   switch (category) {
+        case 'UPCOMING ROUTE ACTIONS':
+      return 0;
     case 'GREENLAND PROPOSAL':
       return 1;
     case 'GREENLAND PROTECTED':
       return 2;
     case 'GREENLAND LOCAL':
       return 3;
-    case 'IMO POLAR':
+    case 'CANADA':
       return 4;
     case 'SVALBARD':
       return 5;
-    case 'IAATO':
+    case 'IMO POLAR':
       return 6;
-    case 'SOLAS':
+    case 'IAATO':
       return 7;
-    case 'MARPOL':
+    case 'SOLAS':
       return 8;
+    case 'MARPOL':
+      return 9;
     default:
       return 99;
   }

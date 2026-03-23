@@ -9,6 +9,8 @@ import { GREENLAND_PROTECTED_POLYGONS } from './polygons/greenlandProtected';
 import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon';
 import { polygon as turfPolygon, point as turfPoint } from '@turf/helpers';
 import { LANCASTER_SOUND_MPA_POLYGONS } from './polygons/lancasterSoundMpa';
+import { CANADA_NORDREG_POLYGONS } from './polygons/canadaNordreg';
+import { CANADA_NWP_POLYGONS } from './polygons/canadaNwpCorridor';
 
 export type LatLng = [number, number]; // [lat, lng]
 export type LatLngObject = { lat: number; lng: number };
@@ -302,28 +304,6 @@ export function getActiveAreaIds(vesselPosition: LatLngObject): string[] {
         : isPointInPolygon(point, polygon.coordinates);
     }
 
-    if (
-      polygon.areaId === 'IMO_N60' ||
-      polygon.layerKey === 'greenlandProtectedAreas' ||
-      polygon.layerKey === 'greenlandLocalRestrictions' ||
-      polygon.layerKey === 'canadaNordreg'
-    ) {
-      console.log('🔵 AREA TEST:', {
-        polygonId: polygon.id,
-        areaId: polygon.areaId,
-        name: polygon.name,
-        position: vesselPosition,
-        inside,
-        method:
-          polygon.areaId === 'IMO_N60'
-            ? 'Boundary interpolation'
-            : polygon.useTurf
-              ? 'Turf.js'
-              : 'Ray Casting',
-        polygonPoints: polygon.coordinates.length,
-      });
-    }
-
     if (shouldActivate(polygon.triggerMode, inside)) {
       active.add(polygon.areaId);
     }
@@ -411,29 +391,6 @@ export const REGULATORY_POLYGONS: RegulatoryPolygon[] = [
   ...GREENLAND_SERMERSOOQ_POLYGONS,
   ...GREENLAND_LOCAL_RESTRICTION_POLYGONS,
   ...GREENLAND_PROTECTED_POLYGONS,
-
-  // =====================
-  // CANADA (REAL NORDREG + TEST SUPPORT)
-  // =====================
-
-
-
-
-  {
-  id: 'canada_nwp_corridor',
-  name: 'Northwest Passage Corridor',
-  areaId: 'CANADA_NWP',
-  triggerMode: 'inside',
-  coordinates: [
-    [70, -130],
-    [70, -60],
-    [80, -60],
-    [80, -130],
-  ],
-  useTurf: false,
-  sourceType: 'advisory',
-  layerKey: 'canadaNwpCorridor',
-  category: 'proposal',
-  rulecardId: null,
-},
+  ...CANADA_NORDREG_POLYGONS,
+  ...CANADA_NWP_POLYGONS,
 ];

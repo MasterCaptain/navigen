@@ -278,6 +278,50 @@ export const ruleCards: RuleCard[] = [
   }
 },
 
+{
+  id: "CANADA_NWP_001",
+  version: "1.0.0",
+  status: "Active",
+  severity: "CONSIDER",
+  statement: "Vessel is operating within an operational Northwest Passage corridor where voyage planning should account for ice, remoteness, and route-specific constraints.",
+  authority: {
+    regime: "Operational Context",
+    instrument: "Northwest Passage",
+    reference: "NAVIGEN corridor layer"
+  },
+  applicability: {
+    areas: [{ areaId: "CANADA_NWP", condition: "INSIDE" }],
+    vessel: { type: ["ANY"], iceClass: ["ANY"], flag: ["ANY"] },
+    time: { start: null, end: null, season: null }
+  },
+  content: {
+    rationale: "The Northwest Passage is not a legal regime but an operational corridor requiring increased situational awareness and voyage planning.",
+    actions: [
+      { text: "Review ice conditions and routing before transit.", type: "NOTE" },
+      { text: "Confirm NORDREG reporting requirements separately.", type: "NOTE" },
+      { text: "Assess SAR availability and remoteness risks.", type: "NOTE" }
+    ],
+    exceptions: [],
+    links: []
+  },
+  ops: {
+    audience: ["BRIDGE", "MASTER"],
+    module: "VOYAGE",
+    tags: ["CANADA", "NWP", "CORRIDOR", "ARCTIC"]
+  },
+  ui: {
+    title: "Northwest Passage Operational Corridor",
+    compact: true,
+    suppressible: true,
+    priority: 500
+  },
+  metadata: {
+    createdBy: "NAVIGEN",
+    createdAt: "2026-03-22T00:00:00Z",
+    updatedAt: "2026-03-22T00:00:00Z"
+  }
+},
+
   {
     id: "POLAR_003",
     version: "1.0.0",

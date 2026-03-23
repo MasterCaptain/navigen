@@ -889,7 +889,7 @@ useEffect(() => {
     };
 
     renderCanadaLancaster();
-  }, [mapReady, regLayers?.canadaLancasterSound, onRulecardSelect, activeAreaIds]);
+  }, [mapReady, regLayers?.canadaLancasterSound, onRulecardSelect]);
 
   // Canada NWP Corridor render
   useEffect(() => {

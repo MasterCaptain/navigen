@@ -30,6 +30,7 @@ import { getProtectedAreas } from './lib/authService';
 import { generateZoneCrossingPoints } from './lib/zoneCrossingEngine';
 import { detectGreenlandProtectedRouteHits } from './lib/greenlandProtectedRoute';
 import type { ZoneActivityEvent } from './lib/compliance/zoneActivityLogger';
+import { buildRouteComplianceEvents } from './lib/routeComplianceEvents';
 
 type CrossingArea = {
   area_id: string;
@@ -189,95 +190,112 @@ const App: React.FC = () => {
     loadProtectedAreas();
   }, []);
 
-  const regulatoryCrossingAreas = React.useMemo<CrossingArea[]>(() => {
-    const shouldIncludePolygon = (polygonId: string): boolean => {
-      if (!regLayers.enabled) return false;
+    const regulatoryCrossingAreas = React.useMemo<CrossingArea[]>(() => {
+  const shouldIncludePolygon = (polygon: RegulatoryPolygon): boolean => {
+    if (!regLayers.enabled) return false;
 
-      if (polygonId === 'TERRITORIAL_12NM' && regLayers.bordersEnabled && regLayers.territorialWaters12nm) return true;
-      if (polygonId === 'CONTIGUOUS_24NM' && regLayers.bordersEnabled && regLayers.contiguousZone24nm) return true;
-      if (polygonId === 'EEZ_200NM' && regLayers.bordersEnabled && regLayers.eez200nm) return true;
+    if (
+      polygon.areaId === 'TERRITORIAL_12NM' &&
+      regLayers.bordersEnabled &&
+      regLayers.territorialWaters12nm
+    ) return true;
 
-      if (polygonId === 'IMO_N60_POLYGON' && regLayers.regulatoryZonesEnabled && regLayers.imoN60) return true;
-      if (polygonId === 'IMO_S60_POLYGON' && regLayers.regulatoryZonesEnabled && regLayers.imoS60) return true;
+    if (
+      polygon.areaId === 'CONTIGUOUS_24NM' &&
+      regLayers.bordersEnabled &&
+      regLayers.contiguousZone24nm
+    ) return true;
 
-      if (
-        (polygonId === 'BJORNOYA_12NM_POLYGON' || polygonId === 'SPITSBERGEN_12NM_POLYGON') &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.svalbard12nm
-      ) {
-        return true;
-      }
+    if (
+      polygon.areaId === 'EEZ_200NM' &&
+      regLayers.bordersEnabled &&
+      regLayers.eez200nm
+    ) return true;
 
-      if (
-        polygonId.includes('GREENLAND') &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.greenlandProtectedAreas
-      ) return true;
+    if (
+      polygon.areaId === 'IMO_N60' &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.imoN60
+    ) return true;
 
-      if (
-        polygonId.startsWith('PROTECTED_') &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.svalbardProtectedAreas
-      ) return true;
+    if (
+      polygon.areaId === 'IMO_S60' &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.imoS60
+    ) return true;
 
-      if (
-        polygonId === 'CANADA_NORDREG' &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.canadaNordreg
-      ) return true;
+    if (
+      (polygon.id === 'BJORNOYA_12NM_POLYGON' || polygon.id === 'SPITSBERGEN_12NM_POLYGON') &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.svalbard12nm
+    ) {
+      return true;
+    }
 
-      if (
-        polygonId === 'CANADA_LANCASTER_SOUND' &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.canadaLancasterSound
-      ) return true;
+    if (
+      polygon.areaId.includes('GREENLAND') &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.greenlandProtectedAreas
+    ) return true;
 
-      if (
-        polygonId === 'CANADA_NWP_CORRIDOR' &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.canadaNwpCorridor
-      ) return true;
+    if (
+      polygon.id.startsWith('PROTECTED_') &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.svalbardProtectedAreas
+    ) return true;
 
-      if (
-        polygonId.includes('MARPOL') &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.marpolAreas
-      ) return true;
+    if (
+      polygon.areaId === 'CANADA_NORDREG' &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.canadaNordreg
+    ) return true;
 
-      if (
-        polygonId.includes('SOLAS') &&
-        regLayers.regulatoryZonesEnabled &&
-        regLayers.solasZones
-      ) return true;
+    if (
+      polygon.areaId === 'CANADA_LANCASTER_MPA' &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.canadaLancasterSound
+    ) return true;
 
-      return false;
-    };
+    if (
+      polygon.areaId === 'CANADA_NWP' &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.canadaNwpCorridor
+    ) return true;
 
-    const mapped = REGULATORY_POLYGONS
-      .filter((polygon) => shouldIncludePolygon(polygon.id))
-      .map((polygon) => ({
-        area_id: polygon.areaId,
-        name: polygon.name,
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            polygon.coordinates.map(([lat, lng]) => [lng, lat]),
-          ],
-        },
-      }));
+    if (
+      polygon.areaId.includes('MARPOL') &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.marpolAreas
+    ) return true;
 
-    console.log('🧭 Regulatory crossing areas:', mapped.length);
-    console.log('🧭 Regulatory crossing sample:', mapped[0]);
+    if (
+      polygon.areaId.includes('SOLAS') &&
+      regLayers.regulatoryZonesEnabled &&
+      regLayers.solasZones
+    ) return true;
 
-    return mapped;
-  }, [regLayers]);
+    return false;
+  };
+
+  const mapped = REGULATORY_POLYGONS
+    .filter((polygon) => shouldIncludePolygon(polygon))
+    .map((polygon) => ({
+      area_id: polygon.areaId,
+      name: polygon.name,
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          polygon.coordinates.map(([lat, lng]) => [lng, lat]),
+        ],
+      },
+    }));
+
+
+  return mapped;
+}, [regLayers]);
 
   const crossingAreas = React.useMemo<CrossingArea[]>(() => {
     const merged = [...regulatoryCrossingAreas, ...protectedAreas];
-
-    console.log('🧭 crossingAreas total:', merged.length);
-    console.log('🧭 protectedAreas count:', protectedAreas.length);
-    console.log('🧭 regulatoryCrossingAreas count:', regulatoryCrossingAreas.length);
 
     return merged;
   }, [regulatoryCrossingAreas, protectedAreas]);
@@ -290,23 +308,17 @@ const App: React.FC = () => {
       greenlandProtectedGeoJson
     );
 
-    console.log('🟥 Greenland protected hits:', hits);
-
     return hits;
   }, [activeRoute, greenlandProtectedGeoJson]);
 
   const zoneCrossingPoints = React.useMemo(() => {
-    console.log('🧭 ZCP DEBUG - activeRoute:', activeRoute);
-    console.log('🧭 ZCP DEBUG - crossingAreas count:', crossingAreas.length);
-
+    
     if (!activeRoute || !crossingAreas.length) {
-      console.log('🧭 ZCP DEBUG - skipped: missing activeRoute or crossingAreas');
       return [];
     }
 
     try {
       const result = generateZoneCrossingPoints(activeRoute, crossingAreas);
-      console.log('🧭 ZCP DEBUG - generated crossings:', result);
       return result;
     } catch (error) {
       console.error('❌ Error generating Zone Crossing Points:', error);
@@ -314,19 +326,15 @@ const App: React.FC = () => {
     }
   }, [activeRoute, crossingAreas]);
 
-  React.useEffect(() => {
-    if (activeRoute) {
-      console.log('🧭 ACTIVE ROUTE WAYPOINT SAMPLE:', activeRoute.waypoints?.slice(0, 3));
-    }
-  }, [activeRoute]);
+  const routeComplianceEvents = React.useMemo(() => {
+  return buildRouteComplianceEvents(zoneCrossingPoints);
+}, [zoneCrossingPoints]);
 
-  React.useEffect(() => {
-    if (zoneCrossingPoints.length > 0) {
-      console.log('🟣 Zone Crossing Points generated:', zoneCrossingPoints);
-    } else {
-      console.log('🟡 ZCP DEBUG - no crossings generated');
-    }
-  }, [zoneCrossingPoints]);
+console.log('APP RENDER DEBUG', {
+  activeRoute: !!activeRoute,
+  crossingsCount: zoneCrossingPoints.length,
+  routeEventsCount: routeComplianceEvents.length,
+});
 
   React.useEffect(() => {
     const saved = localStorage.getItem('navigen_custom_zones');
@@ -779,8 +787,9 @@ const App: React.FC = () => {
         }
 
         if (area.includes('CANADA') || area.includes('NORDREG') || area.includes('NWP') || area.includes('LANCASTER')) {
-          rulesetZones.add('HIGH SEAS');
-        }
+  rulesetZones.add('CANADA');
+  rulesetZones.add('HIGH SEAS');
+}
       }
 
       if (rulesetZones.size === 0) {
@@ -1085,6 +1094,8 @@ const App: React.FC = () => {
         detectedAreas={detectedAreas}
         vesselPosition={vesselPosition}
         activeRoute={activeRoute}
+        activeRulesFromEngine={complianceResult.activeRules}
+        routeComplianceEvents={routeComplianceEvents}
       />
 
       <SettingsDialog
